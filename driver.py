@@ -4,6 +4,7 @@ os.system('cls' if os.name == 'nt' else 'clear')
 
 from utils import *
 from FVS_Class.FVS_SCAN import *
+import mongo_interface
 
 import Configs.config as cfg
 
@@ -17,7 +18,6 @@ if __name__ == "__main__":
         # get line numbers containing the word STDIDENT
         line_numbers = get_line_numbers_containing_word(file_name, "STDIDENT")
         line_numbers.append(len(get_all_lines(file_name)))
-
         FVS_SCANS = []
         # for every FVS run, get the line number of the lower and upper bounds
         for i in range(len(line_numbers)-1):
@@ -70,6 +70,7 @@ if __name__ == "__main__":
     
     def print_carbrept(file_name):
         FVS_SCANS = get_FVS_scans(file_name)
+
         for scan in FVS_SCANS:
             # print the stand id
             print(scan.stand_id)
@@ -262,31 +263,29 @@ if __name__ == "__main__":
                             print(my_line)
                     print()
             break
-
-    def test_case():
-        def memory():
+    def memory():
             import os, psutil
             process = psutil.Process(os.getpid())
             return (process.memory_info().rss)/1024  # in kilobytes 
 
-        try:
-            print_dwdvlout_report(cfg.my_out_file)
-            os.system('cls' if os.name == 'nt' else 'clear')
-            print_fuelout_report(cfg.my_out_file)
-            os.system('cls' if os.name == 'nt' else 'clear')
-            print_carbrept(cfg.my_out_file)
-            os.system('cls' if os.name == 'nt' else 'clear')
-            print_canfprof_report(cfg.my_out_file)
-            os.system('cls' if os.name == 'nt' else 'clear')
-            print("Test Passed")
-            # print out how much ram is being used by the program
-            print("Memory usage: {} KB".format(memory()))
-            # pause the program to allow for the user to see the results
-            input("Press Enter to continue...")
-        
-
-        except Exception as e:
-            print("Test failed")
-            print(e)
+    def test_case():
+        # clear the console with os
+        os.system('cls' if os.name == 'nt' else 'clear')
+        # try:
+        # print_dwdvlout_report(cfg.my_out_file)
+        # os.system('cls' if os.name == 'nt' else 'clear')
+        # print_fuelout_report(cfg.my_out_file)
+        # os.system('cls' if os.name == 'nt' else 'clear')
+        # print_carbrept(cfg.my_out_file)
+        # os.system('cls' if os.name == 'nt' else 'clear')
+        # print_canfprof_report(cfg.my_out_file)
+        # os.system('cls' if os.name == 'nt' else 'clear')
+        FVS_SCANS = get_FVS_scans(cfg.my_out_file)
+        mongo_client = mongo_interface.get_client()
+        mongo_interface.upload_scans(mongo_client, FVS_SCANS, cfg.my_out_file)
+        print("Test Passed")
+        # except Exception as e:
+        #     print("Test failed")
+        #     print(e)
     
     test_case()

@@ -1,14 +1,6 @@
 # import os
 # import sys
 """ import necessary util functions """
-# from utils.get_all_lines import *
-# from utils.get_indent_level import *
-# from utils.get_index_of_word_within_line import *
-# from utils.get_ith_word_from_line import *
-# from utils.get_line_numbers_containing_word import *
-# from utils.get_lines_with_indent_level import *
-# from utils.get_lines import *
-# from utils.is_number import *
 from utils import *
 
 class CANFPROF:
@@ -17,6 +9,9 @@ class CANFPROF:
         self.stand_id = self.get_stand_id()
         self.mgmt_id = self.get_mgmt_id()
         self.valid_years, self.report_dict = self.get_report_dict()
+
+        # free up memory
+        del self.text
          
     def get_canfprof_text(self, text):
         #find the line number that contains the word POTENTIAL FIRE REPORT (
@@ -319,10 +314,10 @@ class CANFPROF:
 
         poten_smoke_zip_iterators = []
 
-        # loop through every valid year
+        """ Maps values to subcategories"""
         for i in range(len(valid_years)):
             # create a dictionary for the value ranges
-            flame_length_surface_values = flame_length_surface_sev_values[i] + flame_length_surface_mod_values[i]
+            flame_length_surface_values = flame_length_surface_sev_values[i] + flame_length_surface_mod_values[i]            
             flame_length_surface_zip_iterators.append(dict(zip(flame_length_surface_range, flame_length_surface_values)))
 
             ft_total_values = ft_total_sev_values[i] + ft_total_mod_values[i]
@@ -334,6 +329,7 @@ class CANFPROF:
             prob_torching_values = prob_torching_sev_values[i] + prob_torching_mod_values[i]
             prob_torching_zip_iterators.append(dict(zip(prob_torching_range, prob_torching_values)))
 
+            """ These do not have subcategories, maping to main categories """
             torch_index_sev_mi_hr_zip_iterators.append(dict(zip('TORCH INDEX SEVERE MI/HR', torch_index_sev_mi_hr_values[i])))
             crown_index_sev_mi_hr_zip_iterators.append(dict(zip('CROWN INDEX SEVERE MI/HR', crown_index_sev_mi_hr_values[i])))
             cnpy_base_ht_ft_zip_iterators.append(dict(zip('CNPY BASE HT FT', cnpy_base_ht_ft_values[i])))
@@ -345,47 +341,49 @@ class CANFPROF:
             poten_smoke_values = poten_smoke_sev_values[i] + poten_smoke_mod_values[i]
             poten_smoke_zip_iterators.append(dict(zip(poten_smoke_range, poten_smoke_values)))
 
-            
+        """ These do not have subcategories """
         # flatten out the 1 deep indexed lists
         flattened_torch_index_sev_mi_hr_values = [item for sublist in torch_index_sev_mi_hr_values for item in sublist]
         flattened_crown_index_sev_mi_hr_values = [item for sublist in crown_index_sev_mi_hr_values for item in sublist]
         flattened_cnpy_base_ht_ft_values = [item for sublist in cnpy_base_ht_ft_values for item in sublist]
         flattened_canpy_bulk_density_kg_m3_values = [item for sublist in canpy_bulk_density_kg_m3_values for item in sublist]
         
-        # create the dictionaries
-        flame_length_surface_dict = dict(zip(valid_years, flame_length_surface_zip_iterators))
-        ft_total_dict = dict(zip(valid_years, ft_total_zip_iterators))
-        fire_type_dict = dict(zip(valid_years, fire_type_zip_iterators))
-        prob_torching_dict = dict(zip(valid_years, prob_torching_zip_iterators))
+        """ Map categories to years """
+        top_level_dict = dict.fromkeys(valid_years)
+        list_of_categories = ['FLAME LENGTH SURFACE',
+                              '(FT) TOTAL',
+                              'FIRE TYPE',
+                              'PROB OF TORCHING',
 
-        torch_index_sev_mi_hr_dict = dict(zip(valid_years, flattened_torch_index_sev_mi_hr_values))
-        crown_index_sev_mi_hr_dict = dict(zip(valid_years, flattened_crown_index_sev_mi_hr_values))
-        cnpy_base_ht_ft_dict = dict(zip(valid_years, flattened_cnpy_base_ht_ft_values))
-        canpy_bulk_density_kg_m3_dict = dict(zip(valid_years, flattened_canpy_bulk_density_kg_m3_values))
+                              'TORCH INDEX SEVERE MI/HR',
+                              'CROWN INDEX SEVERE MI/HR',
+                              'CNPY BASE HT FT',
+                              'CANPY BULK DENSITY KG/M3',
 
-        potential_mortality_dict = dict(zip(valid_years, potential_mortality_zip_iterators))
+                              'POTENTIAL MORALITY',
 
-        poten_smoke_dict = dict(zip(valid_years, poten_smoke_zip_iterators))
+                              'POTENTIAL SMOKE']
+        category_dicts = []
+        for i in range(len(valid_years)):
+            category_dicts.append(dict.fromkeys(list_of_categories))
 
-        """ create the dataframe """
-        # tie the dictionaries together
+        for i, year in enumerate(valid_years):
+            category_dicts[i]['FLAME LENGTH SURFACE'] = flame_length_surface_zip_iterators[i]
+            category_dicts[i]['(FT) TOTAL'] = ft_total_zip_iterators[i]
+            category_dicts[i]['FIRE TYPE'] = fire_type_zip_iterators[i]
+            category_dicts[i]['PROB OF TORCHING'] = prob_torching_zip_iterators[i]
 
-        canfprof_dict = {
-        'FLAME LENGTH SURFACE': flame_length_surface_dict,
-        '(FT) TOTAL': ft_total_dict,
-        'FIRE TYPE': fire_type_dict,
-        'PROB OF TORCHING': prob_torching_dict,
-        
-        'TORCH INDEX SEVERE MI/HR': torch_index_sev_mi_hr_dict,
-        'CROWN INDEX SEVERE MI/HR': crown_index_sev_mi_hr_dict,
-        'CNPY BASE HT FT': cnpy_base_ht_ft_dict,
-        'CANPY BULK DENSTY KG/M3': canpy_bulk_density_kg_m3_dict,
+            category_dicts[i]['TORCH INDEX SEVERE MI/HR'] = flattened_torch_index_sev_mi_hr_values[i]
+            category_dicts[i]['CROWN INDEX SEVERE MI/HR'] = flattened_crown_index_sev_mi_hr_values[i]
+            category_dicts[i]['CNPY BASE HT FT'] = flattened_cnpy_base_ht_ft_values[i]
+            category_dicts[i]['CANPY BULK DENSITY KG/M3'] = flattened_canpy_bulk_density_kg_m3_values[i]
 
-        'POTENTIAL MORALITY': potential_mortality_dict,
+            category_dicts[i]['POTENTIAL MORALITY'] = potential_mortality_zip_iterators[i]
 
-        'POTENTIAL SMOKE': poten_smoke_dict
+            category_dicts[i]['POTENTIAL SMOKE'] = poten_smoke_zip_iterators[i]
+            
 
-        }
+        for i, key in enumerate(top_level_dict):
+            top_level_dict[key] = (category_dicts[i].copy())
 
-
-        return valid_years, canfprof_dict
+        return valid_years, top_level_dict

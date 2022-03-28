@@ -15,31 +15,40 @@ class FVS_SCAN:
 
         # values to set later
         self.stand_id = self.get_STAND_ID()
-        self.calibration_statistics = Calibration_Statistics(self.text)
-
+        try:
+            self.calibration_statistics = Calibration_Statistics(self.text)
+        except Exception as e:
+            print("{}: Error on calibration statistics: ".format(self.stand_id), e)
+            self.calibration_statistics = None
         # It is not guaranteed that DWDVLOUT is present in the text for a given FVS_SCAN
         try:
             self.dwdvlout = DWDVLOUT(self.text)
         except Exception as e:
+            print("{}: Error on DWDVLOUT: ".format(self.stand_id), e)
             self.dwdvlout = None
         
         # It is not guaranteed that CARBREPT is present in the text for a given FVS_SCAN
         try:
             self.carbrept = CARBREPT(self.text)
         except Exception as e:
+            print("{}: Error on CARBREPT: ".format(self.stand_id), e)
             self.carbrept = None
         
         # It is not guaranteed that FUELOUT is present in the text for a given FVS_SCAN
         try:
             self.fuelout = FUELOUT(self.text)
         except Exception as e:
+            print("{}: Error on FUELOUT: ".format(self.stand_id), e)
             self.fuelout = None
 
         try:
             self.canfprof = CANFPROF(self.text)
         except Exception as e:
-            print(e)
+            print("{}: Error on CANFPROF: ".format(self.stand_id), e)
             self.canfprof = None
+
+        # free up memory
+        del self.text
    
     def get_STAND_ID(self):
         #find the line within the text that contains STAND ID=

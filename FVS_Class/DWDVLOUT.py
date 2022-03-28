@@ -5,7 +5,10 @@ class DWDVLOUT:
         self.text = self.get_ddwv_text(text)
         self.stand_id = self.get_stand_id()
         self.mgmt_id = self.get_mgmt_id()
-        self.wood_types, self.valid_years, self.valid_ranges, self.report_dict = self.get_report_dict()
+        self.valid_years, self.valid_ranges, self.report_dict = self.get_report_dict()
+
+        # free up memory
+        del self.text
 
     def get_ddwv_text(self, text):
         #find the line number that contains the word DOWN DEAD WOOD VOLUME
@@ -102,7 +105,7 @@ class DWDVLOUT:
                     yearly_hardwood_volumes.append(word)
                 except:
                     break
-            hardwood_volumes.append(yearly_hardwood_volumes)
+            hardwood_volumes.append([float(i) for i in yearly_hardwood_volumes])
 
         """ get the softwood volumes """
         softwood_volumes = []
@@ -118,27 +121,30 @@ class DWDVLOUT:
                     yearly_softwood_volumes.append(word)
                 except:
                     break
-            softwood_volumes.append(yearly_softwood_volumes)
+            softwood_volumes.append([float(i) for i in yearly_softwood_volumes])
+
 
         """ map the data to a dictionary """
         hard_zip_iterators = []
         soft_zip_iterators = []
         # loop through every valid year
         for i in range(len(valid_years)):
-            # create a dictionary for the value ranges
-            hard_zip_iterator = zip(valid_ranges, hardwood_volumes[i])
-            soft_zip_iterator = zip(valid_ranges, softwood_volumes[i])
-
             # append the dictionaries to the list
-            hard_zip_iterators.append(dict(hard_zip_iterator))
-            soft_zip_iterators.append(dict(soft_zip_iterator))
+            hard_zip_iterators.append(dict(zip(valid_ranges, hardwood_volumes[i])))
+            soft_zip_iterators.append(dict(zip(valid_ranges, softwood_volumes[i])))
 
-        # create a dictionary for the valid years
-        hard_years_dict = dict(zip(valid_years, hard_zip_iterators))
-        soft_years_dict = dict(zip(valid_years, soft_zip_iterators))
+        list_of_categories = ['HARD','SOFT']
+        category_dicts = []
+        for i in range(len(valid_years)):
+            category_dicts.append(dict.fromkeys(list_of_categories))
 
-        # tie the dictionaries together
-        my_wood_types = ['HARD','SOFT']
-        my_wood_dict = {'HARD': hard_years_dict, 'SOFT': soft_years_dict}
+        for i, year in enumerate(valid_years):
+            category_dicts[i]['HARD'] = hard_zip_iterators[i]
+            category_dicts[i]['SOFT'] = soft_zip_iterators[i]
 
-        return my_wood_types, valid_years, valid_ranges, my_wood_dict
+        top_level_dict = dict.fromkeys(valid_years)
+
+        for i, key in enumerate(top_level_dict):
+            top_level_dict[key] = (category_dicts[i].copy())
+
+        return valid_years, valid_ranges, top_level_dict

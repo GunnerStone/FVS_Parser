@@ -6,6 +6,9 @@ class Calibration_Statistics:
         self.descriptions = self.get_descriptions()
         self.values = self.get_values()
 
+        # free up memory
+        del self.text
+
     """ gets the tree codes used within the statistics text"""
     def get_tree_codes(self):
         #find the line that contains the word CALIBRATION STATISTICS

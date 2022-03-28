@@ -6,7 +6,8 @@ class CARBREPT:
         self.mgmt_id = self.get_mgmt_id()
         self.valid_years, self.report_dict = self.get_report_dict()
 
-
+        # free up memory
+        del self.text
     
     def get_fuelout_text(self, text):
         # find the line number that contains the word STAND CARBON REPORT
@@ -23,6 +24,19 @@ class CARBREPT:
         fuelout_text = get_lines(fuelout_text, range(0, upper_bound))
 
         return fuelout_text
+        
+    def get_mgmt_id(self):
+        #find the line number that contains the word MGMT ID:
+        lower_bound = get_line_numbers_containing_word(self.text, 'MGMT ID:')[0]
+
+        # get index of the word ID: 
+        index = get_index_of_word_within_line(self.text[lower_bound], word='ID:')[1]
+        index += 1 # add 1 to get the value
+
+        # get the value
+        mgmt_id = self.text[lower_bound].split()[index]
+
+        return mgmt_id
 
     def get_stand_id(self):
         #find the line number that contains the word STAND ID:
@@ -184,61 +198,49 @@ class CARBREPT:
             pointer_idx += 1
 
             """ Append the current year's values to the running list of all years' values"""
-            aboveground_live_values.append(yearly_aboveground_live_values)
-            belowground_values.append(yearly_belowground_values)
-            standdead_values.append(yearly_standdead_values)
-            forest_values.append(yearly_forest_values)
-            totalstandcarbon_values.append(yearly_totalstandcarbon_values)
-            totalremovedcarbon_values.append(yearly_totalremovedcarbon_values)
-            carbonreleasedfromfire_values.append(yearly_carbonreleasedfromfire_values)
-
-
-        """ map the data to a dictionary """
-        aboveground_live_zip_iterators = []
-        belowground_zip_iterators = []
-        standdead_zip_iterators = []
-        forest_zip_iterators = []
-        totalstandcarbon_zip_iterators = []
-        totalremovedcarbon_zip_iterators = []
-        carbonreleasedfromfire_zip_iterators = []
-
-        # loop through every valid year
-        for i in range(len(valid_years)):
-            # create a dictionary for the value ranges
-            aboveground_live_zip_iterators.append(dict(zip(aboveground_live_indexes, aboveground_live_values[i])))
-            belowground_zip_iterators.append(dict(zip(belowground_indexes, belowground_values[i])))
-            standdead_zip_iterators.append(dict(zip(standdead_indexes, standdead_values[i])))
-            forest_zip_iterators.append(dict(zip(forest_indexes, forest_values[i])))
-            totalstandcarbon_zip_iterators.append(dict(zip(totalstandcarbon_indexes, totalstandcarbon_values[i])))
-            totalremovedcarbon_zip_iterators.append(dict(zip(totalremovedcarbon_indexes, totalremovedcarbon_values[i])))
-            carbonreleasedfromfire_zip_iterators.append(dict(zip(carbonreleasedfromfire_indexes, carbonreleasedfromfire_values[i])))
-
+            aboveground_live_values.append([float(i) for i in yearly_aboveground_live_values])
+            belowground_values.append([float(i) for i in yearly_belowground_values])
+            standdead_values.append([float(i) for i in yearly_standdead_values])
+            forest_values.append([float(i) for i in yearly_forest_values])
+            totalstandcarbon_values.append([float(i) for i in yearly_totalstandcarbon_values])
+            totalremovedcarbon_values.append([float(i) for i in yearly_totalremovedcarbon_values])
+            carbonreleasedfromfire_values.append([float(i) for i in yearly_carbonreleasedfromfire_values])
             
-        # create a dictionary for the valid years
-        flattened_standdead_values = [item for sublist in standdead_values for item in sublist]
-        flattened_totalstandcarbon_values = [item for sublist in totalstandcarbon_values for item in sublist]
-        flattened_totalremovedcarbon_values = [item for sublist in totalremovedcarbon_values for item in sublist]
-        flattened_carbonreleasedfromfire_values = [item for sublist in carbonreleasedfromfire_values for item in sublist]
+        ag_zip_iterrators = []
+        bg_zip_iterrators = []
+        sd_zip_iterrators = []
+        f_zip_iterrators = []
+        tsc_zip_iterrators = []
+        trc_zip_iterrators = []
+        crf_zip_iterrators = []
 
-        aboveground_live_dict = dict(zip(valid_years, aboveground_live_zip_iterators))
-        belowground_dict = dict(zip(valid_years, belowground_zip_iterators))
-        standdead_dict = dict(zip(valid_years, flattened_standdead_values))
-        forest_dict = dict(zip(valid_years, forest_zip_iterators))
-        totalstandcarbon_dict = dict(zip(valid_years, flattened_totalstandcarbon_values))
-        totalremovedcarbon_dict = dict(zip(valid_years, flattened_totalremovedcarbon_values))
-        carbonreleasedfromfire_dict = dict(zip(valid_years, flattened_carbonreleasedfromfire_values))
+        for i in range(len(valid_years)):
+            ag_zip_iterrators.append(dict(zip(aboveground_live_indexes, aboveground_live_values[i])))
+            bg_zip_iterrators.append(dict(zip(belowground_indexes, belowground_values[i])))
+            # sd_zip_iterrators.append(dict(zip(['Stand Dead'], standdead_values[i])))
+            f_zip_iterrators.append(dict(zip(forest_indexes, forest_values[i])))
+            # tsc_zip_iterrators.append(dict(zip(['Total Stand Carbon'], [totalstandcarbon_values[i]])))
+            # trc_zip_iterrators.append(dict(zip(['Total Removed Carbon'], [totalremovedcarbon_values[i]])))
+            # crf_zip_iterrators.append(dict(zip(['Carbon Released from Fire'], [carbonreleasedfromfire_values[i]])))
         
-        # tie the dictionaries together
+        list_of_categories = ['Aboveground Live', 'Belowground', 'Stand Dead', 'Forest', 'Total Stand Carbon', 'Total Removed Carbon', 'Carbon Released from Fire']
+        category_dicts = []
+        for i in range(len(valid_years)):
+            category_dicts.append(dict.fromkeys(list_of_categories))
+        
+        for i, year in enumerate(valid_years):
+            category_dicts[i]['Aboveground Live'] = ag_zip_iterrators[i]
+            category_dicts[i]['Belowground'] = bg_zip_iterrators[i]
+            category_dicts[i]['Stand Dead'] = standdead_values[i][0]
+            category_dicts[i]['Forest'] = f_zip_iterrators[i]
+            category_dicts[i]['Total Stand Carbon'] = totalstandcarbon_values[i][0]
+            category_dicts[i]['Total Removed Carbon'] = totalremovedcarbon_values[i][0]
+            category_dicts[i]['Carbon Released from Fire'] = carbonreleasedfromfire_values[i][0]
 
-        carbrept_dict = {
-        'Aboveground Live': aboveground_live_dict, 
-        'Belowground': belowground_dict, 
-        'Stand Dead': standdead_dict, 
-        'Forest': forest_dict, 
-        'Total Stand Carbon': totalstandcarbon_dict, 
-        'Total Removed Carbon': totalremovedcarbon_dict, 
-        'Carbon Released from Fire': carbonreleasedfromfire_dict
-        }
+        top_level_dict = dict.fromkeys(valid_years)
 
+        for i, key in enumerate(top_level_dict):
+            top_level_dict[key] = (category_dicts[i].copy())       
 
-        return valid_years, carbrept_dict
+   
+        return valid_years, top_level_dict
