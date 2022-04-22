@@ -20,6 +20,7 @@ class FVS_SCAN:
         except Exception as e:
             print("{}: Error on calibration statistics: ".format(self.stand_id), e)
             self.calibration_statistics = None
+            
         # It is not guaranteed that DWDVLOUT is present in the text for a given FVS_SCAN
         try:
             self.dwdvlout = DWDVLOUT(self.text)

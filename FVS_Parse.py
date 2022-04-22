@@ -3,15 +3,13 @@ from asyncio.windows_events import NULL
 # import utils and FVS_Class
 import os
 import sys
+
 fpath = os.path.join(os.path.dirname(__file__), 'utils')
-print("MAGICAL FPATH: {}".format(fpath))
 sys.path.append(fpath)
 fpath = os.path.join(os.path.dirname(__file__), 'FVS_Class')
 sys.path.append(fpath)
 from utils import *
 
-# print out the sys path
-print("sys.path:", sys.path)
 
 import Configs.config as cfg
 

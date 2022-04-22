@@ -9,6 +9,7 @@ import mongo_interface
 import Configs.config as cfg
 
 import psutil
+import time
 
 # if this file is run as a script, run the main function
 if __name__ == "__main__":
@@ -270,22 +271,12 @@ if __name__ == "__main__":
 
     def test_case():
         # clear the console with os
-        os.system('cls' if os.name == 'nt' else 'clear')
-        # try:
-        # print_dwdvlout_report(cfg.my_out_file)
-        # os.system('cls' if os.name == 'nt' else 'clear')
-        # print_fuelout_report(cfg.my_out_file)
-        # os.system('cls' if os.name == 'nt' else 'clear')
-        # print_carbrept(cfg.my_out_file)
-        # os.system('cls' if os.name == 'nt' else 'clear')
-        # print_canfprof_report(cfg.my_out_file)
-        # os.system('cls' if os.name == 'nt' else 'clear')
-        FVS_SCANS = get_FVS_scans(cfg.my_out_file)
-        mongo_client = mongo_interface.get_client()
-        mongo_interface.upload_scans(mongo_client, FVS_SCANS, cfg.my_out_file)
-        print("Test Passed")
-        # except Exception as e:
-        #     print("Test failed")
-        #     print(e)
+        for out_file in cfg.my_out_files:
+            os.system('cls' if os.name == 'nt' else 'clear')
+            FVS_SCANS = get_FVS_scans(out_file)
+            mongo_client = mongo_interface.get_client()
+            mongo_interface.upload_scans(mongo_client, FVS_SCANS, out_file)
+            print("Test Passed for file: {}".format(out_file))
+            time.sleep(5)
     
     test_case()
