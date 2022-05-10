@@ -7,8 +7,6 @@ from FVS_Class.FVS_SCAN import *
 import mongo_interface
 
 import Configs.config as cfg
-
-import psutil
 import time
 
 
@@ -262,17 +260,13 @@ def print_canfprof_report(filename):
                         print(my_line)
                 print()
         break
-def get_memory_usage():
-        import os, psutil
-        process = psutil.Process(os.getpid())
-        return (process.memory_info().rss)/1024  # in kilobytes 
 
 def test_case():
     # for every .out file in the out_files folder
     for out_file in cfg.my_out_files:
         # clear the console
         os.system('cls' if os.name == 'nt' else 'clear')
-        # get every FVS Scan object parsed from the .out file
+        # get every FVS Scan object (treatment) parsed from the .out file
         FVS_SCANS = get_FVS_scans(out_file)
 
         """ start a mongo connection """

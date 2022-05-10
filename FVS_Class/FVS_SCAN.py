@@ -42,13 +42,14 @@ class FVS_SCAN:
             print("{}: Error on FUELOUT: ".format(self.stand_id), e)
             self.fuelout = None
 
+        # It is not guaranteed that CANFPROF is present in the text for a given FVS_SCAN
         try:
             self.canfprof = CANFPROF(self.text)
         except Exception as e:
             print("{}: Error on CANFPROF: ".format(self.stand_id), e)
             self.canfprof = None
 
-        # free up memory
+        # free up memory by removing unnecessary text
         del self.text
    
     def get_STAND_ID(self):
