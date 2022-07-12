@@ -4,6 +4,7 @@ from .DWDVLOUT import *
 from .CARBREPT import *
 from .FUELOUT import *
 from .CANFPROF import *
+from .INPUT_OPTIONS import *
 
 
 class FVS_SCAN:
@@ -48,6 +49,12 @@ class FVS_SCAN:
         except Exception as e:
             print("{}: Error on CANFPROF: ".format(self.stand_id), e)
             self.canfprof = None
+
+        try:
+            self.input_options = INPUT_OPTIONS(self.text)
+        except Exception as e:
+            print("{}: Error on INPUT_OPTIONS: ".format(self.stand_id), e)
+            self.input_options = None
 
         # free up memory by removing unnecessary text
         del self.text

@@ -5,8 +5,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from Configs.secrets import mongo_client_database
 from Configs.secrets import mongo_client_collection
 # takes the FVS_Scans object and uploads it to the mongo database
-def upload_scans(client, scans, out_filename):
-    post = construct_FVS_document(scans, out_filename)
+def upload_scans(client, parsed_outfile, out_filename):
+    post = construct_FVS_document(parsed_outfile, out_filename)
     db = client[mongo_client_database]
     collection = db[mongo_client_collection]
 

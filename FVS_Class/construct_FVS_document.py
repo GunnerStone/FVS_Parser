@@ -1,5 +1,7 @@
 import json
+from datetime import date
 from functools import reduce
+import time
 
 """ Merges 2 nested dictionaries together"""
 def merge(a, b, path=None):
@@ -17,17 +19,19 @@ def merge(a, b, path=None):
             a[key] = b[key]
     return a
 
-def construct_FVS_document(FVS_scan_lst,out_file_name):
+def construct_FVS_document(parsed_outfile,out_file_name):
     """
-    Creates a MongoDB document object from the list of FVS_Scans
+    Creates a MongoDB document object from the parsed_outfile
     _id is set to the .out file name (without the .out extension or filepath)
     """
-    _id = out_file_name.split('.')[0].split('/')[-1]
-    print("_id: ",_id)
+
+    # if parsed_outfile["x_coord"] is not None and parsed_outfile["y_coord"] is not None:
+    #     _id = "X:{} Y:{}".format(parsed_outfile["x_coord"],parsed_outfile["y_coord"])
+
+    # print("_id: ",_id)
     # make a dictionary object of each FVS_Scan
     scan_dicts = []
-    print("num of FVS scans: ",len(FVS_scan_lst))
-    for scan in FVS_scan_lst:
+    for scan in parsed_outfile["treatments"]:
         # get the scan_id
         stand_id = scan.stand_id
         # parse out the treatment id (it is before the '_')
@@ -35,7 +39,6 @@ def construct_FVS_document(FVS_scan_lst,out_file_name):
         # parse out the iterration from the scan id (it is after the '_')
         iter_id = int(stand_id.split('_')[-1])
         iteration_num = 'ITER{}'.format(iter_id)
-        # print("treatment: {} with iteration: {}".format(treatment_num,iteration_num))
         try:
             dwdvlout = scan.dwdvlout.report_dict
             # print("dwdvlout found!")
@@ -60,16 +63,33 @@ def construct_FVS_document(FVS_scan_lst,out_file_name):
         except AttributeError:
             canfprof = {}
             # print("canfprof not found!")
-        scan_dict = {treatment_num:{iteration_num:{
+        try:
+            input_options = scan.input_options.dictionary
+        except AttributeError:
+            input_options = {}
+        scan_dict = {treatment_num:{
+                        iteration_num:{
+                        'INPUT_OPTIONS':input_options,
                         'DWDVLOUT':dwdvlout,
                         'CARBREPT':carbrept,
                         'FUELOUT':fuelout,
-                        'CANFPROF':canfprof}}}
+                        'CANFPROF':canfprof}
+                        }}
         
         scan_dicts.append(scan_dict)
         # print("appended scan_dict: ",scan_dict)
+    # if the coordinates are not present, set the _id to the .out filename
+    if parsed_outfile["x_coord"] is None or parsed_outfile["y_coord"] is None:
+        _id = "{}".format(out_file_name.split('.')[0].split('/')[-1])
+    else:
+        _id = "{}__{}__{}".format(parsed_outfile["x_coord"],parsed_outfile["y_coord"],parsed_outfile["version"])
     document = {
-        '_id': _id
+        '_id':_id,
+        'file_name': out_file_name.split('.')[0].split('/')[-1],
+        'x_coord': parsed_outfile["x_coord"],
+        'y_coord': parsed_outfile["y_coord"],
+        'version': parsed_outfile["version"],
+        'date_uploaded': date.today().strftime("%m/%d/%Y")
     }
     
     for scan in scan_dicts:

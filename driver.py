@@ -4,6 +4,8 @@ os.system('cls' if os.name == 'nt' else 'clear')
 
 from utils import *
 from FVS_Class.FVS_SCAN import *
+from FVS_Class import XY_COORDS
+from FVS_Class import VERSION_NUM
 import mongo_interface
 
 import Configs.config as cfg
@@ -13,14 +15,34 @@ import time
 # Gets the line number of the beginning of the desired FVS index
 def get_FVS_scans(file_name):
     # get line numbers containing the word STDIDENT
-    line_numbers = get_line_numbers_containing_word(file_name, "STDIDENT")
+    line_numbers = get_line_numbers_containing_word(file_name, "OPTIONS SELECTED BY INPUT")
     line_numbers.append(len(get_all_lines(file_name)))
-    FVS_SCANS = []
-    # for every FVS run, get the line number of the lower and upper bounds
+    
+    """ parsed_outfile stores all extracted information for a given .out file"""
+    parsed_outfile = {
+        "x_coord": None,
+        "y_coord": None,
+        "version": None,
+        "treatments": []
+    }
+
+    # gather the xy coordinates from the .outfile and store in the parsed dict
+    xy_coords = XY_COORDS(get_all_lines(file_name))
+    version = VERSION_NUM(get_all_lines(file_name))
+
+    parsed_outfile["x_coord"] = xy_coords.x
+    parsed_outfile["y_coord"] = xy_coords.y
+    parsed_outfile["version"] = version.version
+
+
+    # for every TREATMENT, get the line number of the lower and upper bounds
     for i in range(len(line_numbers)-1):
         my_text = get_lines(file_name, range(line_numbers[i]-1, line_numbers[i+1]-1))
-        FVS_SCANS.append(FVS_SCAN(line_numbers[i]-1,line_numbers[i+1]-1, my_text))
-    return FVS_SCANS
+        parsed_outfile["treatments"].append(FVS_SCAN(line_numbers[i]-1,line_numbers[i+1]-1, my_text))
+
+    return parsed_outfile
+
+
 def print_dwdvlout_report(file_name):
     #
     FVS_SCANS = get_FVS_scans(file_name)
@@ -52,6 +74,8 @@ def print_dwdvlout_report(file_name):
                     print(my_str)
             
         print("\n")
+
+
 def print_calibration_statistics(file_name):
     FVS_SCANS = get_FVS_scans(file_name)
     for scan in FVS_SCANS:
@@ -64,6 +88,7 @@ def print_calibration_statistics(file_name):
 
             # value of statistic for all tree codes
             print(scan.calibration_statistics.values[i])
+
 
 def print_carbrept(file_name):
     FVS_SCANS = get_FVS_scans(file_name)
@@ -263,18 +288,19 @@ def print_canfprof_report(filename):
 
 def test_case():
     # for every .out file in the out_files folder
-    for out_file in cfg.my_out_files:
+    for out_filename in cfg.my_out_files:
         # clear the console
         os.system('cls' if os.name == 'nt' else 'clear')
         # get every FVS Scan object (treatment) parsed from the .out file
-        FVS_SCANS = get_FVS_scans(out_file)
+
+        parsed_outfile = get_FVS_scans(out_filename)
 
         """ start a mongo connection """
         mongo_client = mongo_interface.get_client()
         # upload the FVS_SCANS to the mongo database
-        mongo_interface.upload_scans(mongo_client, FVS_SCANS, out_file)
+        mongo_interface.upload_scans(mongo_client, parsed_outfile, out_filename)
 
-        print("Test Passed for file: {}".format(out_file))
+        print("Test Passed for file: {}".format(out_filename))
         time.sleep(3)
 
 # if this file is run as a script, run the main function
