@@ -1,4 +1,5 @@
 from calendar import c
+from collections import Counter
 from utils import *
 import time
 class INPUT_OPTIONS:
@@ -100,7 +101,8 @@ class INPUT_OPTIONS:
                         comments += '\n' + ' '.join(line.split())
                     # if not a comment line, add the line to the value
                     else:
-                        param_value += '\n' + ' '.join(line.split())
+                        if param_value is not None:
+                            param_value += '\n' + ' '.join(line.split())
             elif len(line.split()) == 0:
                 # if cheapo_flag:
                 #     print("e: ", e)
@@ -142,15 +144,35 @@ class INPUT_OPTIONS:
                 values.append(param_value)
                 param_name = None
                 param_value = None
+
+        
+
+        # find all indexes in params where it is none
+        none_idxs = [i for i, x in enumerate(params) if x is None]
+        # remove all the None values from the params and values lists
+        for i in none_idxs[::-1]: # reverse the list so popping works
+            params.pop(i)
+            values.pop(i)
+
+        # find duplicate parameters and rename them to avoid conflicts
+        duplicated_params = []
+        for i, param in enumerate(params):
+            if param in duplicated_params:
+                param = param + "_duplicateKeyToken(" + str(i) + ")"
+                duplicated_params.append(param)
+            else:
+                duplicated_params.append(param)
+
+        params = duplicated_params
+        
         # dictionary comprehension to stitch the params and values together
         input_options_dict = {params[i]: values[i] for i in range(len(params))}
         # add the comments to the dictionary
         input_options_dict['COMMENTS'] = comments
 
-        # print all keys
-        # for key in input_options_dict:
-        #     print(key)
-        # time.sleep(100)
+
+       
+
         # remove all null values and their corresponding keys from the dictionary
         # null values are duplicate keys, we ignore them to avoid errors with mongodb
         input_options_dict = {k: v for k, v in input_options_dict.items() if v is not None}
