@@ -25,48 +25,45 @@ def construct_FVS_document(parsed_outfile,out_file_name):
     _id is set to the .out file name (without the .out extension or filepath)
     """
 
-    # if parsed_outfile["x_coord"] is not None and parsed_outfile["y_coord"] is not None:
-    #     _id = "X:{} Y:{}".format(parsed_outfile["x_coord"],parsed_outfile["y_coord"])
-
-    # print("_id: ",_id)
-    # make a dictionary object of each FVS_Scan
     scan_dicts = []
+    
     for scan in parsed_outfile["treatments"]:
         # get the scan_id
         stand_id = scan.stand_id
+
         # parse out the treatment id (it is before the '_')
         treatment_num = stand_id.split('_')[0]
+        treatment_num = ''.join(x for x in treatment_num if x.isdigit()) # grab the digits
+
         # parse out the iterration from the scan id (it is after the '_')
         iter_id = int(stand_id.split('_')[-1])
         iteration_num = 'ITER{}'.format(iter_id)
+
         try:
             dwdvlout = scan.dwdvlout.report_dict
-            # print("dwdvlout found!")
         except AttributeError:
             dwdvlout = {}
-            # print("dwdvlout not found!")
+
         try:
             carbrept = scan.carbrept.report_dict
-            # print("carbrept found!")
         except AttributeError:
             carbrept = {}
-            # print("carbrept not found!")
+
         try:
             fuelout = scan.fuelout.report_dict
-            # print("fuelout found!")
         except AttributeError:
             fuelout = {}
-            # print("fuelout not found!")
+
         try:
             canfprof = scan.canfprof.report_dict
-            # print("canfprof found!")
         except AttributeError:
             canfprof = {}
-            # print("canfprof not found!")
+
         try:
             input_options = scan.input_options.dictionary
         except AttributeError:
             input_options = {}
+
         scan_dict = {treatment_num:{
                         iteration_num:{
                         'INPUT_OPTIONS':input_options,
@@ -77,22 +74,45 @@ def construct_FVS_document(parsed_outfile,out_file_name):
                         }}
         
         scan_dicts.append(scan_dict)
-        # print("appended scan_dict: ",scan_dict)
+
     # if the coordinates are not present, set the _id to the .out filename
-    if parsed_outfile["x_coord"] is None or parsed_outfile["y_coord"] is None:
+    if parsed_outfile["x_projected"] is None or parsed_outfile["y_projected"] is None:
         _id = "{}".format(out_file_name.split('.')[0].split('/')[-1])
     else:
-        _id = "{}__{}__{}".format(parsed_outfile["x_coord"],parsed_outfile["y_coord"],parsed_outfile["version"])
+        _id = "{}__{}__{}".format(parsed_outfile["x_projected"],parsed_outfile["y_projected"],parsed_outfile["version"])
+
     document = {
         '_id':_id,
+
+        'treatments':{},
+        
         'file_name': out_file_name.split('.')[0].split('/')[-1],
-        'x_coord': parsed_outfile["x_coord"],
-        'y_coord': parsed_outfile["y_coord"],
+
+        # make a GEOJSON point object from the projected coordinates for Albers
+        'projected_coordinates':{
+            'type':'Point',
+            'coordinates':[parsed_outfile["x_projected"],parsed_outfile["y_projected"]]
+        },
+        
+        # make GEOJSON point object from the lat/long coordinates
+        'location':{
+            'type':'Point',
+            'coordinates':[parsed_outfile["x_latlon"],parsed_outfile["y_latlon"]]
+        },
+        
+        'is_valid_output': parsed_outfile["is_valid_output"],
+        
         'version': parsed_outfile["version"],
+        
         'date_uploaded': date.today().strftime("%m/%d/%Y")
     }
     
+    # store all the treatments in a treatment dict
+    treatment_dict = {}
     for scan in scan_dicts:
-        document = merge(document,scan)
+        treatment_dict = merge(treatment_dict,scan)
+    
+    # add the treatment dict to the document
+    document['treatments'] = treatment_dict
 
     return document

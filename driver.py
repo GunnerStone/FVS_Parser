@@ -4,7 +4,9 @@ os.system('cls' if os.name == 'nt' else 'clear')
 
 from utils import *
 from FVS_Class.FVS_SCAN import *
-from FVS_Class import XY_COORDS
+from FVS_Class import XY_PROJECTED
+from FVS_Class import XY_LATLON
+from FVS_Class import ISVALIDOUTPUT
 from FVS_Class import VERSION_NUM
 import mongo_interface
 
@@ -20,18 +22,31 @@ def get_FVS_scans(file_name):
     
     """ parsed_outfile stores all extracted information for a given .out file"""
     parsed_outfile = {
-        "x_coord": None,
-        "y_coord": None,
-        "version": None,
-        "treatments": []
+        "treatments": [],
+
+        "is_valid_output": False,
+        
+        # xy projected to albers
+        "x_projected": None,
+        "y_projected": None,
+        # xy projected to latlon
+        "x_latlon": None,
+        "y_latlon": None,
+
+        "version": None   
     }
 
     # gather the xy coordinates from the .outfile and store in the parsed dict
-    xy_coords = XY_COORDS(get_all_lines(file_name))
+    xy_projected = XY_PROJECTED(get_all_lines(file_name))
+    xy_latlon = XY_LATLON(get_all_lines(file_name))
     version = VERSION_NUM(get_all_lines(file_name))
+    is_valid_output = ISVALIDOUTPUT(get_all_lines(file_name))
 
-    parsed_outfile["x_coord"] = xy_coords.x
-    parsed_outfile["y_coord"] = xy_coords.y
+    parsed_outfile["is_valid_output"] = is_valid_output.value
+    parsed_outfile["x_projected"] = xy_projected.x
+    parsed_outfile["y_projected"] = xy_projected.y
+    parsed_outfile["x_latlon"] = xy_latlon.x
+    parsed_outfile["y_latlon"] = xy_latlon.y
     parsed_outfile["version"] = version.version
 
 

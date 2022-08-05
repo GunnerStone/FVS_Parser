@@ -1,8 +1,8 @@
 from utils import *
-class XY_COORDS:
+class XY_LATLON:
     def __init__(self,text):
         try:
-            self.text = self.get_xycoords_text(text)
+            self.text = self.get_xylatlon_text(text)
             self.x = self.get_x(self.text)
             self.y = self.get_y(self.text)
 
@@ -16,14 +16,14 @@ class XY_COORDS:
             self.y = None
 
     """ gets the statistics text from a FVS_SCAN object's text """
-    def get_xycoords_text(self, text):
-        #find the line number that contains the word *XY_COORDS
-        line_num = get_line_numbers_containing_word(text, '*XY_COORDS')[0]
+    def get_xylatlon_text(self, text):
+        #find the line number that contains the word *XY_LATLON
+        line_num = get_line_numbers_containing_word(text, '*XY_LATLON')[0]
 
         #get the text between the two line numbers
-        xycoords_text = get_lines(text, [line_num])[0].split()
+        xylatlon_text = get_lines(text, [line_num])[0].split()
         
-        return xycoords_text
+        return xylatlon_text
 
     """ gets the x coordinate from the text """
     def get_x(self, text):
