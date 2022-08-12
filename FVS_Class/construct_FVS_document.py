@@ -91,13 +91,17 @@ def construct_FVS_document(parsed_outfile,out_file_name):
         # make a GEOJSON point object from the projected coordinates for Albers
         'projected_coordinates':{
             'type':'Point',
-            'coordinates':[parsed_outfile["x_projected"],parsed_outfile["y_projected"]]
+            'coordinates':[ float(parsed_outfile["x_projected"]) if parsed_outfile["x_projected"] is not None else None,
+                            float(parsed_outfile["y_projected"]) if parsed_outfile["y_projected"] is not None else None
+                            ]
         },
         
         # make GEOJSON point object from the lat/long coordinates
         'location':{
             'type':'Point',
-            'coordinates':[parsed_outfile["x_latlon"],parsed_outfile["y_latlon"]]
+            'coordinates':[ float(parsed_outfile["x_latlon"]) if parsed_outfile["x_latlon"] is not None else None,
+                            float(parsed_outfile["y_latlon"]) if parsed_outfile["y_latlon"] is not None else None
+                            ]
         },
         
         'is_valid_output': parsed_outfile["is_valid_output"],
