@@ -20,6 +20,12 @@ The parser can extract the following top-level features:
 - DWDVLOUT
 - FUELOUT
 
+Able to parse out user-specified comment fields within .out file
+- *XY_PROJECTED stores the Albers Projected Coordinates for the plot
+    - Stores the coordinates in a GEOJSON object for geospatial querying capabilities
+- *XY_LATLON stores Latitude/Longitude Coordinates for the plot
+    - Stores the coordinates in a GEOJSON object for geospatial querying capabilities
+- *ISVALIDOUTPUT stores TRUE/FALSE to help track of keyfile errors against plots that contain zero trees
 ___
 
 ## Developer Features
@@ -61,17 +67,69 @@ ___
   <img src="Readme_Assets/readme_mongodb_example.png">
 </p>
 
-The UID of each document is the name of the .out file. 
-Each document is a collection of Treatments for a given .out file. 
-Each Treatment is a collection of Iterations. 
-Each Iteration is a collection of top-level features (CARBREPT, DWDVLOUT, etc). 
-Each top-level feature is broken down by year. 
-For a given year, you can check the stats of a low-level feature (Total Stand Carbon, Stand Dead, etc).
+### Document UID conventions
+The UID will default to being `<XY_PROJECTED.X>_<XY_PROJECTED.Y>_<FvsVersionNumber>`.
 
+If the user defined comment field `XY_PROJECTED` is not present or does not contain valid values, the UID will instead be the .out filename. 
+
+### Document meta-data
+
+- Each document contains the `.out` filename that was used to generate itself.
+- Each document logs the date that it was uploaded to the database.
+- Each document logs the FVS version number used to generate itself. 
+- Each document contains a collection of Treatments for a given .out file. 
+- Each Treatment is a collection of Iterations. 
+- Each Iteration is a collection of top-level features (CARBREPT, DWDVLOUT, etc). 
+- Each top-level feature is broken down by year. 
+- For a given year, you can check the stats of a low-level feature (Total Stand Carbon, Stand Dead, etc).
 
 
 ___
 ## Development
+
+### Creating custom User-specified comment parsers
+
+Creating new on-demand user-defined comment parsing is necessary should your workflow wish to transfer more information from previous steps into this parser. 
+
+Here are the steps to making a custom comment parser
+
+In this example, we want to make a custom comment to keep track of if the outfile loves dogs or cats or both.
+
+First, lets see what this comment would look like inside the `.out` file.
+
+<p align="center">
+  <img src="Readme_Assets/custom_comments_in_outfile.png">
+</p>
+
+We specify this as a user-defined comment by beginning it with `*Loves_Dogs_Loves_Cats`
+
+Next it is followed by two boolean values with a comma delimiter separating the two values. 
+
+Inside the code, we need to add a LOVES_DOGS_LOVES_CATS class within `FVS_PARSER/FVS_Class/LOVES_DOGS_LOVES_CATS.py`
+
+<p align="center">
+  <img src="Readme_Assets/loves_dogs_loves_cats_file_placement.png">
+</p>
+
+To accomplish this, we will copy/paste another comment parser class (in this case we are copying `XY_PROJECTED.py`) and rename it to `LOVES_DOGS_LOVES_CATS.py`. This will help allow us to refactor already existing code to fit our new custom comment field.
+
+From here, carefully read the comments within the refactored code and make appropriate changes to parse out the two boolean values. Store them in class attribute variables.
+
+Now, we need the FVS parser to actually utilize this class and extract the comment. To do this, open up `FVS_PARSER/driver.py` and follow the lead of the other user-defined custom comments. The picture below is an example of how to do this. Boxed in red is the refactored code to add dog/cat parameters. 
+
+<p align="center">
+  <img src="Readme_Assets/driver_dogcat.png">
+</p>
+
+Now that this information is stored in our FVS_Class object, it needs to be transfered to a format that MongoDB documents understand (JSON). To do this, open `FVS_PARSER/FVS_CLASS/construct_FVS_document.py`. In the code that constructs the mongo document, add our custom parameters to the JSON object like the above picture. 
+
+<p align="center">
+  <img src="Readme_Assets/adding_dogcat_to_document.png">
+</p>
+
+And thats it! You should see your changes reflected in the document uploaded to mongo!
+
+## Contributing
 
 Want to contribute? Great!
 
